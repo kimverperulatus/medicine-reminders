@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Alert } from 'react-native';
-import { Button, Card, Title, Paragraph } from 'react-native-paper';
+import { Button, Card, Title, Paragraph, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useQueryClient } from 'react-query';
 import { supabase } from '../lib/supabase';
 import { useSupabase } from '../providers/SupabaseProvider';
@@ -16,7 +16,7 @@ type Dose = {
 };
 
 const TodayScreen = () => {
-  const { user } = useSupabase();
+  const { user, initialized } = useSupabase();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
 
@@ -72,7 +72,7 @@ const TodayScreen = () => {
       }));
     },
     {
-      enabled: !!user,
+      enabled: !!user && initialized,
     }
   );
 
@@ -114,8 +114,8 @@ const TodayScreen = () => {
       // Refresh the data
       refetch();
       queryClient.invalidateQueries(['today-doses', user.id]);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update dose status');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update dose status');
       console.error(error);
     } finally {
       setLoading(false);
@@ -138,6 +138,7 @@ const TodayScreen = () => {
               onPress={() => updateDoseStatus(item.schedule_id, 'taken')}
               disabled={loading || item.status === 'taken'}
               style={[styles.button, styles.takenButton]}
+              loading={loading && item.status !== 'taken'}
             >
               Taken
             </Button>
@@ -146,6 +147,7 @@ const TodayScreen = () => {
               onPress={() => updateDoseStatus(item.schedule_id, 'snoozed')}
               disabled={loading || item.status === 'taken'}
               style={[styles.button, styles.snoozeButton]}
+              loading={loading && item.status !== 'taken'}
             >
               Snooze
             </Button>
@@ -154,6 +156,7 @@ const TodayScreen = () => {
               onPress={() => updateDoseStatus(item.schedule_id, 'skipped')}
               disabled={loading || item.status === 'taken'}
               style={[styles.button, styles.skipButton]}
+              loading={loading && item.status !== 'taken'}
             >
               Skip
             </Button>
@@ -163,10 +166,27 @@ const TodayScreen = () => {
     );
   };
 
+  if (!initialized) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <Text>Loading today's medications...</Text>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>Loading today's medications...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Please sign in to view your medications</Text>
       </View>
     );
   }
@@ -200,6 +220,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
+    textAlign: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
     textAlign: 'center',
   },
   list: {

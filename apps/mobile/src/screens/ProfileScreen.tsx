@@ -1,19 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
-import { Button, Card, Title, Paragraph } from 'react-native-paper';
+import { Button, Card, Title, Paragraph, ActivityIndicator } from 'react-native-paper';
 import { useSupabase } from '../providers/SupabaseProvider';
 
 const ProfileScreen = () => {
-  const { user, signOut } = useSupabase();
+  const { user, signOut, loading } = useSupabase();
+  const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
+    setSigningOut(true);
     try {
       await signOut();
     } catch (error) {
       Alert.alert('Error', 'Failed to sign out');
       console.error(error);
+    } finally {
+      setSigningOut(false);
     }
   };
+
+  if (loading || signingOut) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -24,17 +36,19 @@ const ProfileScreen = () => {
             <>
               <Paragraph>Email: {user.email}</Paragraph>
               <Paragraph>User ID: {user.id}</Paragraph>
+              <Button 
+                mode="contained" 
+                onPress={handleSignOut}
+                style={styles.signOutButton}
+                loading={signingOut}
+                disabled={signingOut}
+              >
+                Sign Out
+              </Button>
             </>
           ) : (
             <Paragraph>Not signed in</Paragraph>
           )}
-          <Button 
-            mode="contained" 
-            onPress={handleSignOut}
-            style={styles.signOutButton}
-          >
-            Sign Out
-          </Button>
         </Card.Content>
       </Card>
     </View>

@@ -8,10 +8,14 @@ console.log("generate_schedules function started");
 
 serve(async (_req) => {
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing environment variables");
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get all active prescriptions
     const { data: prescriptions, error: prescriptionsError } = await supabaseClient

@@ -110,6 +110,15 @@ cd scripts
 npm run seed
 ```
 
+## Cloud Supabase Integration
+
+To connect to your cloud Supabase instance:
+
+1. Get your Supabase credentials from the project dashboard
+2. Set up environment variables as described in `docs/cloud-setup.md`
+3. Deploy the database schema to your cloud project
+4. Deploy the Edge Functions to your cloud project
+
 ## Workflows
 
 The n8n workflows handle:

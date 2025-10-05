@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -10,6 +10,7 @@ type SupabaseContextType = {
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
+  initialized: boolean;
 };
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
@@ -17,6 +18,7 @@ const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined
 export const SupabaseProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const initialize = async () => {
@@ -31,6 +33,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
         console.error('Error restoring session:', error);
       } finally {
         setLoading(false);
+        setInitialized(true);
       }
     };
 
@@ -61,12 +64,18 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      Alert.alert('Error', error.message);
+      throw error;
+    }
   };
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    if (error) {
+      Alert.alert('Error', error.message);
+      throw error;
+    }
     await AsyncStorage.removeItem('supabase.session');
   };
 
@@ -76,6 +85,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     signIn,
     signOut,
     loading,
+    initialized,
   };
 
   return (

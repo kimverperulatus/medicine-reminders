@@ -5,10 +5,14 @@ console.log("send_due_push function started");
 
 serve(async (_req) => {
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing environment variables");
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get doses due in the next 30 minutes
     const now = new Date();
