@@ -51,9 +51,9 @@ supabase db push
 Deploy your functions to the cloud:
 
 ```bash
-supabase functions deploy generate_schedules
-supabase functions deploy send_due_push
-supabase functions deploy mark_missed
+supabase functions deploy generate_schedules --project-ref your_project_id
+supabase functions deploy send_due_push --project-ref your_project_id
+supabase functions deploy mark_missed --project-ref your_project_id
 ```
 
 ## Setting Up Scheduled Jobs
@@ -71,6 +71,7 @@ Set up cron jobs for your functions in the Supabase dashboard:
 1. Start the mobile app:
    ```bash
    cd apps/mobile
+   npm install
    npm start
    ```
 

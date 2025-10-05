@@ -11,7 +11,9 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "clean": "turbo clean",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "setup:env": "node scripts/setup-env.js",
+    "test:connection": "node scripts/test-connection.js"
   },
   "devDependencies": {
     "turbo": "^1.10.12",
