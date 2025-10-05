@@ -1,0 +1,153 @@
+{
+  "name": "Missed Dose SMS Alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "missed-dose-alert"
+      },
+      "id": "2",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "webhookId": "missed-dose-alert"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.id as patient_id, u.phone as patient_phone, p.emergency_contact_phone, COUNT(il.id) as missed_count FROM intake_logs il JOIN patients p ON il.patient_id = p.id JOIN users u ON p.user_id = u.id WHERE il.status = 'missed' AND il.created_at >= NOW() - INTERVAL '48 hours' AND p.id = $1 GROUP BY p.id, u.phone, p.emergency_contact_phone"
+      },
+      "id": "3",
+      "name": "Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json[\"missed_count\"] }}",
+              "operation": "gte",
+              "value2": 3
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "twilioApi": "={{ $credentials.twilioApi }}",
+        "from": "={{ $env[\"TWILIO_PHONE_NUMBER\"] }}",
+        "to": "={{ $json[\"patient_phone\"] }}",
+        "message": "={{ 'You have missed ' + $json[\"missed_count\"] + ' doses in the last 48 hours. Please take your medications as prescribed.' }}"
+      },
+      "id": "5",
+      "name": "Twilio",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "twilioApi": "={{ $credentials.twilioApi }}",
+        "from": "={{ $env[\"TWILIO_PHONE_NUMBER\"] }}",
+        "to": "={{ $json[\"emergency_contact_phone\"] }}",
+        "message": "={{ 'Patient has missed ' + $json[\"missed_count\"] + ' doses in the last 48 hours. Please check on them.' }}"
+      },
+      "id": "6",
+      "name": "Twilio1",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF": {
+      "main": [
+        [
+          {
+            "node": "Twilio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Twilio1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

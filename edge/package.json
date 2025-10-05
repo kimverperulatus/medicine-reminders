@@ -1,0 +1,12 @@
+{
+  "name": "@elder-med/edge",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "supabase functions serve",
+    "deploy": "supabase functions deploy"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.7",
+    "supabase": "^1.110.1"
+  }
+}

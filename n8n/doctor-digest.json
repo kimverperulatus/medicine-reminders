@@ -1,0 +1,84 @@
+{
+  "name": "Doctor Daily Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.email as doctor_email, u.full_name as doctor_name, COUNT(CASE WHEN il.status = 'taken' THEN 1 END) as taken_count, COUNT(il.id) as total_count FROM intake_logs il JOIN prescriptions p ON il.schedule_id IN (SELECT id FROM schedules WHERE prescription_id = p.id) JOIN users u ON p.prescribing_doctor_id = u.id WHERE il.created_at >= CURRENT_DATE - INTERVAL '1 day' GROUP BY u.email, u.full_name"
+      },
+      "id": "2",
+      "name": "Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json[\"doctor_email\"] }}",
+        "subject": "Daily Medication Adherence Report",
+        "contentType": "html",
+        "html": "={{ '<h2>Daily Medication Adherence Report</h2><p>Dear Dr. ' + $json[\"doctor_name\"] + ',</p><p>Here is your daily adherence report:</p><ul><li>Patients who took their medications: ' + $json[\"taken_count\"] + '</li><li>Total doses scheduled: ' + $json[\"total_count\"] + '</li><li>Adherence rate: ' + (($json[\"taken_count\"] / $json[\"total_count\"]) * 100).toFixed(2) + '%</li></ul>' }}"
+      },
+      "id": "3",
+      "name": "Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron": {
+      "main": [
+        [
+          {
+            "node": "Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres": {
+      "main": [
+        [
+          {
+            "node": "Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
